@@ -1,11 +1,20 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
+from fastapi.middleware.cors import CORSMiddleware
 import easyocr
 import base64
 import numpy as np
 import cv2
 
 app = FastAPI()
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # O especifica ["http://localhost:3000"] si prefieres limitar
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 lector = easyocr.Reader(['en'], gpu=False)
 
