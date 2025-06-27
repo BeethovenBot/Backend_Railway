@@ -5,12 +5,13 @@ import easyocr
 import base64
 import numpy as np
 import cv2
+import concurrent.futures
 
 app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # O especifica ["http://localhost:3000"] si prefieres limitar
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -19,25 +20,24 @@ app.add_middleware(
 lector = easyocr.Reader(['en'], gpu=False)
 
 class ImagenOCR(BaseModel):
-    imagen: str  # base64 sin prefijo
+    imagenes: list[str]  # Lista de imágenes en base64 sin prefijo
 
 @app.post("/ocr")
-def ocr(imagen_ocr: ImagenOCR):
+def ocr_batch(imagen_ocr: ImagenOCR):
     try:
-        # Decodificar base64
-        img_bytes = base64.b64decode(imagen_ocr.imagen)
-        nparr = np.frombuffer(img_bytes, np.uint8)
-        img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+        def procesar_imagen(base64_img):
+            img_bytes = base64.b64decode(base64_img)
+            nparr = np.frombuffer(img_bytes, np.uint8)
+            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+            resultados = lector.readtext(img, detail=0)
+            return ' '.join(resultados)
 
-        # Procesar con EasyOCR
-        resultados = lector.readtext(img, detail=0)
-        texto_detectado = ' '.join(resultados)
+        with concurrent.futures.ThreadPoolExecutor(max_workers=7) as executor:
+            resultados = list(executor.map(procesar_imagen, imagen_ocr.imagenes))
 
-        return {"texto": texto_detectado}
+        return {"textos": resultados}
     except Exception as e:
         return {"error": str(e)}
-
-# --------------------------------------------------------------
 
 @app.get("/")
 def read_root():
