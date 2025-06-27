@@ -26,13 +26,16 @@ class ImagenOCR(BaseModel):
 def ocr_batch(imagen_ocr: ImagenOCR):
     try:
         def procesar_imagen(base64_img):
-            img_bytes = base64.b64decode(base64_img)
-            nparr = np.frombuffer(img_bytes, np.uint8)
-            img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-            resultados = lector.readtext(img, detail=0)
-            return ' '.join(resultados)
+            try:
+                img_bytes = base64.b64decode(base64_img)
+                nparr = np.frombuffer(img_bytes, np.uint8)
+                img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
+                resultados = lector.readtext(img, detail=0)
+                return ' '.join(resultados)
+            except Exception as e:
+                return f"ERROR: {str(e)}"
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=7) as executor:
+        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
             resultados = list(executor.map(procesar_imagen, imagen_ocr.imagenes))
 
         return {"textos": resultados}
