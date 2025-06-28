@@ -5,7 +5,6 @@ import easyocr
 import base64
 import numpy as np
 import cv2
-import concurrent.futures
 
 app = FastAPI()
 
@@ -35,9 +34,7 @@ def ocr_batch(imagen_ocr: ImagenOCR):
             except Exception as e:
                 return f"ERROR: {str(e)}"
 
-        with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-            resultados = list(executor.map(procesar_imagen, imagen_ocr.imagenes))
-
+        resultados = [procesar_imagen(img) for img in imagen_ocr.imagenes]
         return {"textos": resultados}
     except Exception as e:
         return {"error": str(e)}
