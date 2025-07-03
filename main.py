@@ -1,13 +1,12 @@
 from fastapi import FastAPI
-from pydantic import BaseModel
 from fastapi.middleware.cors import CORSMiddleware
-import easyocr
-import base64
-import numpy as np
-import cv2
+from controllers.ocr_processor import procesar_ocr
+from controllers.gpt_handler import recomendar_jugada
+from models.request_models import ImagenOCR, EstadoJuego
 
 app = FastAPI()
 
+# Permitir acceso desde cualquier origen (útil para Vercel Frontend)
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -16,48 +15,22 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-lector = easyocr.Reader(['en'], gpu=False)
+@app.get("/")
+def root():
+    return {"mensaje": "✅ Backend de PokerBot funcionando correctamente"}
 
-class ImagenOCR(BaseModel):
-    imagenes: list[str]  # Lista de imágenes en base64 sin prefijo
+@app.get("/status")
+def status():
+    return {
+        "estado": "activo",
+        "mensaje": "🎯 El backend de Railway está corriendo sin errores.",
+    }
+
 
 @app.post("/ocr")
-def ocr_batch(imagen_ocr: ImagenOCR):
-    try:
-        def procesar_imagen(base64_img):
-            try:
-                img_bytes = base64.b64decode(base64_img)
-                nparr = np.frombuffer(img_bytes, np.uint8)
-                img = cv2.imdecode(nparr, cv2.IMREAD_COLOR)
-                resultados = lector.readtext(img, detail=0)
-                return ' '.join(resultados)
-            except Exception as e:
-                return f"ERROR: {str(e)}"
+def ocr_batch(imagenes: ImagenOCR):
+    return procesar_ocr(imagenes.imagenes)
 
-        resultados = [procesar_imagen(img) for img in imagen_ocr.imagenes]
-        return {"textos": resultados}
-    except Exception as e:
-        return {"error": str(e)}
-
-@app.get("/")
-def read_root():
-    return {"mensaje": "¡Funcionando!"}
-
-@app.get("/saludo/{nombre}")
-def saludar(nombre: str):
-    return {"saludo": f"Hola, {nombre}!"}
-
-@app.post("/enviar/{dato}")
-def recibir_dato(dato: str):
-    return {"respuesta": f"Me has enviado: {dato}"}
-
-class Persona(BaseModel):
-    nombre: str
-    cedula: str
-
-@app.post("/registrar")
-def registrar_persona(persona: Persona):
-    return {
-        "nombre_recibido": persona.nombre,
-        "cedula_recibida": persona.cedula
-    }
+@app.post("/recomendar")
+def recomendar(data: EstadoJuego):
+    return recomendar_jugada(data)
