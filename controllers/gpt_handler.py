@@ -47,7 +47,7 @@ Con base en esta información, ¿cuál sería la mejor decisión del jugador? Ju
 
     try:
         response = openai.ChatCompletion.create(
-            model="gpt-4o-mini",
+            model="gpt-4o",
             messages=[
                 {
                     "role": "system",
