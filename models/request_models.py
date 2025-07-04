@@ -1,9 +1,11 @@
 from pydantic import BaseModel
-from typing import List
+from typing import List, Optional
 
-class EstadoBasico(BaseModel):
+class EstadoJuego(BaseModel):
     cartas_jugador: List[str]
     cartas_mesa: List[str]
-    boton_posicion: int
-    asiento_jugador: int
-    imagenes: List[str]  # 6 apuestas + 1 pote + 6 stacks
+    boton_posicion: Optional[int]
+    asiento_jugador: Optional[int]
+    apuestas: Optional[List[str]]
+    pot: Optional[str]
+    stacks: Optional[List[str]]
