@@ -1,6 +1,9 @@
 from pydantic import BaseModel
 from typing import List, Optional
 
+class ImagenOCR(BaseModel):
+    imagenes: List[str]
+
 class EstadoJuego(BaseModel):
     cartas_jugador: List[str]
     cartas_mesa: List[str]

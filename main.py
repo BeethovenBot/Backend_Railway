@@ -6,7 +6,7 @@ from models.request_models import ImagenOCR, EstadoJuego
 
 app = FastAPI()
 
-# Permitir acceso desde cualquier origen (útil para Vercel Frontend)
+# CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -26,11 +26,12 @@ def status():
         "mensaje": "🎯 El backend de Railway está corriendo sin errores.",
     }
 
+# ✅ OCR endpoint
+@app.post("/ocr")
+def ocr_batch(imagenes: ImagenOCR):
+    return procesar_ocr(imagenes.imagenes)
 
-#@app.post("/ocr")
-#def ocr_batch(imagenes: ImagenOCR):
- #   return procesar_ocr(imagenes.imagenes)
-
+# ✅ Recomendación
 @app.post("/recomendar")
 def recomendar(data: EstadoJuego):
     return recomendar_jugada(data)
