@@ -1,13 +1,18 @@
 from pymongo import MongoClient
 import os
+from dotenv import load_dotenv
+from datetime import datetime
 
-client = MongoClient(os.getenv("MONGO_URI"))
+load_dotenv()
+client = MongoClient(os.getenv("MONGO_URL"))
 db = client["pokerbot"]
 historial = db["historial"]
 
-def guardar_en_historial(data: dict):
-    historial.insert_one(data)
+def guardar_en_historial(datos):
+    datos["timestamp"] = datetime.utcnow().isoformat()
+    historial.insert_one(datos)
 
 def obtener_historial(limit=10):
-    documentos = historial.find().sort("createdAt", -1).limit(limit)
+    documentos = historial.find().sort("timestamp", -1).limit(limit)
     return list(documentos)
+
