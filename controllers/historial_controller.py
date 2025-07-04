@@ -1,73 +1,78 @@
-from db.mongo import guardar_en_historial
 from gpt_handler import recomendar_jugada
-from models.request_models import Carta, EstadoJuego, Rival
+from models.historial import guardar_en_historial
+from models.request_models import EstadoBasico
+from ocr_processor import procesar_ocr
+
+from fastapi import HTTPException
 from datetime import datetime
 
-async def procesar_info_plana(payload: dict):
-    # Extraer directamente los campos
-    cartas_jugador = payload.get("cartas_jugador", [])
-    cartas_mesa = payload.get("cartas_mesa", [])
-    boton_posicion = payload.get("boton_posicion", 0)
-    asiento_jugador = payload.get("asiento_jugador", 5)
-    apuestas = payload.get("apuestas", [])
-    pot = payload.get("pot", "")
-    stacks = payload.get("stacks", [])
+async def procesar_info_plana(payload: EstadoBasico):
+    try:
+        imagenes = payload.imagenes
 
-    # Construir cartas
-    jugador_cartas = []
-    for c in cartas_jugador:
-        if " " in c:
-            numero, palo = c.split(" ", 1)
-            jugador_cartas.append(Carta(numero=numero, palo=palo))
+        if len(imagenes) != 13:
+            raise HTTPException(status_code=400, detail="Se esperaban 13 imágenes: 6 apuestas, 1 pote, 6 stacks")
 
-    mesa_cartas = [Carta(numero=c.split(" ", 1)[0], palo=c.split(" ", 1)[1])
-                   for c in cartas_mesa if " " in c]
 
-    flop = mesa_cartas[:3]
-    turn = mesa_cartas[3] if len(mesa_cartas) > 3 else None
-    river = mesa_cartas[4] if len(mesa_cartas) > 4 else None
+        # Procesar OCR
+        apuestas = [procesar_ocr(img) for img in imagenes[:6]]
+        pote = procesar_ocr(imagenes[6])
+        stacks = [procesar_ocr(img) for img in imagenes[7:]]
 
-    jugador = {
-        "cartas": jugador_cartas,
-        "stack": stacks[asiento_jugador - 1] if len(stacks) >= asiento_jugador else "",
-        "apuesta": apuestas[asiento_jugador - 1] if len(apuestas) >= asiento_jugador else "",
-        "asiento": asiento_jugador,
-        "boton": (boton_posicion == asiento_jugador)
-    }
+        # Armar estructura
+        jugador = {
+            "cartas": [],
+            "stack": stacks[payload.asiento_jugador - 1] if len(stacks) >= payload.asiento_jugador else "",
+            "apuesta": apuestas[payload.asiento_jugador - 1] if len(apuestas) >= payload.asiento_jugador else "",
+            "asiento": payload.asiento_jugador,
+            "boton": (payload.boton_posicion == payload.asiento_jugador)
+        }
 
-    mesa = {
-        "flop": flop,
-        "turn": turn,
-        "river": river,
-        "pote": pot
-    }
+        for carta_str in payload.cartas_jugador:
+            if " " in carta_str:
+                numero, palo = carta_str.split(" ", 1)
+                jugador["cartas"].append({"numero": numero, "palo": palo})
 
-    rivales = []
-    for i in range(6):
-        if i + 1 == asiento_jugador:
-            continue
-        rivales.append(Rival(
-            asiento=i + 1,
-            stack=stacks[i] if i < len(stacks) else "",
-            apuesta=apuestas[i] if i < len(apuestas) else ""
-        ))
+        mesa = {"flop": [], "turn": None, "river": None, "pote": pote}
+        mesa_cartas = [c for c in payload.cartas_mesa if " " in c]
+        mesa_cartas = [{"numero": c.split(" ", 1)[0], "palo": c.split(" ", 1)[1]} for c in mesa_cartas]
 
-    estado = EstadoJuego(
-        timestamp=datetime.utcnow().isoformat(),
-        jugador=jugador,
-        mesa=mesa,
-        rivales=rivales
-    )
+        if len(mesa_cartas) >= 3:
+            mesa["flop"] = mesa_cartas[:3]
+        if len(mesa_cartas) >= 4:
+            mesa["turn"] = mesa_cartas[3]
+        if len(mesa_cartas) == 5:
+            mesa["river"] = mesa_cartas[4]
 
-    recomendacion = recomendar_jugada(estado)
+        rivales = []
+        for i in range(6):
+            if (i + 1) == payload.asiento_jugador:
+                continue
+            rivales.append({
+                "asiento": i + 1,
+                "stack": stacks[i] if i < len(stacks) else "",
+                "apuesta": apuestas[i] if i < len(apuestas) else ""
+            })
 
-    await guardar_en_historial(
-        id_mano=estado.timestamp,
-        origen="plano",
-        respuesta_gpt=recomendacion,
-        cartas_jugador=[f"{c.numero} {c.palo}" for c in jugador_cartas],
-        cartas_mesa=[f"{c.numero} {c.palo}" for c in mesa_cartas],
-        posicion=boton_posicion
-    )
+        estado = {
+            "timestamp": datetime.utcnow().isoformat(),
+            "jugador": jugador,
+            "mesa": mesa,
+            "rivales": rivales
+        }
 
-    return {"resultado": recomendacion}
+        respuesta = recomendar_jugada(estado)
+
+        await guardar_en_historial(
+            id_mano=estado["timestamp"],
+            origen="plano",
+            respuesta_gpt=respuesta,
+            cartas_jugador=payload.cartas_jugador,
+            cartas_mesa=payload.cartas_mesa,
+            posicion=payload.boton_posicion
+        )
+
+        return {"respuesta": respuesta}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Error interno: {str(e)}")

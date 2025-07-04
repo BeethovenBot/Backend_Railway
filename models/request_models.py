@@ -1,20 +1,9 @@
 from pydantic import BaseModel
-from typing import List, Optional
+from typing import List
 
-class ImagenOCR(BaseModel):
-    imagenes: List[str]  # Lista de imágenes en base64
-
-class Carta(BaseModel):
-    numero: str
-    palo: str
-
-class Rival(BaseModel):
-    asiento: int
-    stack: str
-    apuesta: str
-
-class EstadoJuego(BaseModel):
-    timestamp: Optional[str]
-    jugador: dict  # incluye cartas, stack, apuesta, asiento, boton
-    mesa: dict     # incluye flop, turn, river, pote
-    rivales: List[Rival]
+class EstadoBasico(BaseModel):
+    cartas_jugador: List[str]
+    cartas_mesa: List[str]
+    boton_posicion: int
+    asiento_jugador: int
+    imagenes: List[str]  # 6 apuestas + 1 pote + 6 stacks
