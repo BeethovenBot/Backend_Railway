@@ -1,8 +1,8 @@
 fastapi
 uvicorn[standard]
+pydantic
+openai
 easyocr
 opencv-python-headless
 numpy
 python-dotenv
-openai
-pymongo
