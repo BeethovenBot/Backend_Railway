@@ -1,5 +1,5 @@
 from gpt_handler import recomendar_jugada
-from models.historial import guardar_en_historial
+from db.mongo import guardar_en_historial
 from models.request_models import EstadoBasico
 from ocr_processor import procesar_ocr
 
