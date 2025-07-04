@@ -27,9 +27,9 @@ def status():
     }
 
 
-@app.post("/ocr")
-def ocr_batch(imagenes: ImagenOCR):
-    return procesar_ocr(imagenes.imagenes)
+#@app.post("/ocr")
+#def ocr_batch(imagenes: ImagenOCR):
+ #   return procesar_ocr(imagenes.imagenes)
 
 @app.post("/recomendar")
 def recomendar(data: EstadoJuego):
