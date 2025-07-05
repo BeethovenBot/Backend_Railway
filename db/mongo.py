@@ -13,7 +13,7 @@ def guardar_en_historial(datos):
     historial.insert_one(datos)
 
 def obtener_historial(limit=10):
-    documentos = historial.find().sort("timestamp", -1).limit(limit)
+    documentos = historial.find({}, {"_id": 0}).sort("timestamp", -1).limit(limit)
     resultado = list(documentos)
     print("📋 Historial obtenido:", resultado)
     return resultado
