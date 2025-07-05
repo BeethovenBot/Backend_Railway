@@ -14,5 +14,8 @@ def guardar_en_historial(datos):
 
 def obtener_historial(limit=10):
     documentos = historial.find().sort("timestamp", -1).limit(limit)
-    return list(documentos)
+    resultado = list(documentos)
+    print("📋 Historial obtenido:", resultado)
+    return resultado
+
 
