@@ -5,8 +5,10 @@ from controllers.gpt_handler import recomendar_jugada
 from models.request_models import ImagenOCR, EstadoJuego
 from models.request_models import HistorialEntrada
 from db.mongo import guardar_en_historial, obtener_historial
+from routes import historial
 
 app = FastAPI()
+app.include_router(historial.router)
 
 # CORS
 app.add_middleware(
