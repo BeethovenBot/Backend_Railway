@@ -24,7 +24,7 @@ app.add_middleware(
 @app.get("/historial")
 def get_historial():
     documentos = obtener_historial()
-    return JSONResponse(content=json_util.loads(json_util.dumps(documentos)))
+    return JSONResponse(content=json_util.dumps(documentos), media_type="application/json")
 
 
 @app.post("/guardar_historial")
