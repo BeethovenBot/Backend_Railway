@@ -6,7 +6,8 @@ from controllers.gpt_handler import recomendar_jugada
 from models.request_models import ImagenOCR, EstadoJuego
 from models.request_models import HistorialEntrada
 from db.mongo import guardar_en_historial
-from routes import historial
+from db.mongo import historial as historial_collection
+
 from bson import json_util
 
 app = FastAPI()
@@ -22,7 +23,7 @@ app.add_middleware(
 
 @app.get("/historial")
 def get_historial():
-    documentos = historial.find().sort("timestamp", -1).limit(10)
+    documentos = historial_collection.find().sort("timestamp", -1).limit(10)
     return JSONResponse(content=json_util.loads(json_util.dumps(documentos)))
 
 @app.post("/guardar_historial")
