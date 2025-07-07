@@ -1,14 +1,15 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from controllers.ocr_processor import procesar_ocr
 from controllers.gpt_handler import recomendar_jugada
 from models.request_models import ImagenOCR, EstadoJuego
 from models.request_models import HistorialEntrada
 from db.mongo import guardar_en_historial, obtener_historial
 from routes import historial
+from bson import json_util
 
 app = FastAPI()
-app.include_router(historial.router)
 
 # CORS
 app.add_middleware(
@@ -18,6 +19,11 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+@app.get("/historial")
+def get_historial():
+    documentos = historial.find().sort("timestamp", -1).limit(10)
+    return JSONResponse(content=json_util.loads(json_util.dumps(documentos)))
 
 @app.post("/guardar_historial")
 def guardar(data: HistorialEntrada):
@@ -32,19 +38,10 @@ def historial():
 def root():
     return {"mensaje": "✅ Backend de PokerBot funcionando correctamente"}
 
-@app.get("/status")
-def status():
-    return {
-        "estado": "activo",
-        "mensaje": "🎯 El backend de Railway está corriendo sin errores.",
-    }
-
-# ✅ OCR endpoint
 @app.post("/ocr")
 def ocr_batch(imagenes: ImagenOCR):
     return procesar_ocr(imagenes.imagenes)
 
-# ✅ Recomendación
 @app.post("/recomendar")
 def recomendar(data: EstadoJuego):
     return recomendar_jugada(data)
