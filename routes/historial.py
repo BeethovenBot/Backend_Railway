@@ -5,8 +5,7 @@ from bson import json_util
 
 router = APIRouter()
 
-@router.get("/api/historial")
+@router.get("/historial")
 def get_historial():
     historial_data = obtener_historial()
-    # Usar json_util para convertir ObjectId y datetime
     return JSONResponse(content=json_util.loads(json_util.dumps(historial_data)))
