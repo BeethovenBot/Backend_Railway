@@ -2,8 +2,11 @@ fastapi
 uvicorn[standard]
 pydantic
 openai
-easyocr
 opencv-python-headless
 numpy
 python-dotenv
 pymongo
+
+# OCR
+paddleocr
+paddlepaddle  # usa paddlepaddle-gpu si tienes GPU disponible

@@ -21,6 +21,10 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+@app.post("/ocr")
+def ocr_batch(imagenes: ImagenOCR):
+    return procesar_ocr(imagenes.imagenes)
+
 @app.get("/historial")
 def get_historial():
     documentos = obtener_historial()
@@ -35,10 +39,6 @@ def guardar(data: HistorialEntrada):
 @app.get("/")
 def root():
     return {"mensaje": "✅ Backend de PokerBot funcionando correctamente"}
-
-@app.post("/ocr")
-def ocr_batch(imagenes: ImagenOCR):
-    return procesar_ocr(imagenes.imagenes)
 
 @app.post("/recomendar")
 def recomendar(data: EstadoJuego):
